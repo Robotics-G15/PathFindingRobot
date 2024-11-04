@@ -1,0 +1,64 @@
+class taxi_bot:
+    
+    def __init__(self, path = None, item = None, X_pos = 0, Y_pos = 0, orientation = 0, Shelf_destination = None):
+        self.path = path
+        self.item = item
+        self.X_pos = X_pos
+        self.Y_pos = Y_pos
+        self.orientation = orientation
+        self.Shelf_destination = Shelf_destination
+        
+    def go_to_goal(self, warehouse_width = 10):
+        #generate cmd to output to terminal
+        # temp cmd_vel 
+        Cmd_vel = ""
+        for i in range(len(self.path)-1):
+            self.check_direction((self.path[i] - self.path[i+1]))
+            Cmd_vel = f"Move from Node {[self.X_pos, self.Y_pos]} -> Node {[self.X_pos, self.Y_pos]} at orientation {self.orientation}"
+            print(Cmd_vel)
+            
+    def check_direction(self, direction):
+        if direction == -1:
+            self.update_X_pos(-1)
+            self.update_orientation(180) # Moving left           
+        elif direction == 1:
+            self.update_X_pos(+1)
+            self.update_orientation(0) # Moving right            
+        elif direction == -10: 
+            self.update_Y_pos(+1)
+            self.update_orientation(90) # Moving upward            
+        elif direction == 10: 
+            self.update_Y_pos(-1)
+            self.update_orientation(270) # Moving downward 
+        else:
+            print("Error")
+            
+    def update_X_pos(self, New_X_pos):
+        self.X_pos += New_X_pos
+        
+    def update_Y_pos(self, New_Y_pos):
+        self.Y_pos += New_Y_pos
+            
+    def update_orientation(self, New_orientation):
+        self.orientation = New_orientation
+    
+    def get_item(self, Shelf_item = "Banana"):
+        #self.item = Shelf.Shelf_position
+        #Shelf.Shelf_position = None
+        
+        self.item = Shelf_item
+            
+    def store_item(self):
+        #Shelf.Shelf_position = Shelf_destination
+        #self.item = None
+        self.item = None
+        
+        
+t1 = taxi_bot([0, 1, 2, 3, 4, 14, 24], "Bananas")
+t1.go_to_goal()
+t1.store_item()
+print(t1.item)
+t1.get_item()
+print(t1.item)
+t1.path = [24, 23, 22, 21, 20, 10, 0]
+t1.go_to_goal()
