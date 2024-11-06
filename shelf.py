@@ -1,8 +1,11 @@
 class Shelf:
+    shelves = []
+
     def __init__(self, size = 0, coordinates = (0, 0)):
         self.x = coordinates[0]
         self.y = coordinates[1]
         self.contents = [None] * size
+        Shelf.shelves.append(self)
         pass
 
     # Get item from given index, removing it from the shelf
@@ -38,3 +41,6 @@ shelf1.put('i10467')
 print(shelf1.view_contents())
 print(shelf1.get(4))
 print(shelf1.view_contents())
+
+shelf2 = Shelf(size=1, coordinates=(1,1))
+print(Shelf.shelves)
