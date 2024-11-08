@@ -1,12 +1,13 @@
 # This class represents a directed graph using adjacency list representation
 class Graph:
-    def __init__(self, V):  # Constructor
+    def __init__(self, V: int):  # Constructor
         self.V = V
+        self.Node_pos = {}
         self.adj = [[] for _ in range(V)]
 
-    def addEdge(self, u, v, w):
-        self.adj[u].append((v, w))
-        self.adj[v].append((u, w))
+    def addEdge(self, u: int, v: int, w: int):
+        self.adj[u].append([v, w])
+        self.adj[v].append([u, w])
 
     # Finds the node with the minimum distance in the priority queue
     def minDistanceNode(self, queue, dist):
@@ -57,6 +58,15 @@ class Graph:
         else:
             print(f"Shortest path from {src} to {goal}: {' -> '.join(map(str, path))}")
             print(f"Distance: {dist[goal]}")
+        return path
+    
+    def Update_Graph_Weight(self, Path, weight):
+        for i in range(len(Path)-1):
+            for j in range(len(self.adj[Path[i]])):
+                if self.adj[Path[i]][j][0] == Path[i+1]:
+                    self.adj[Path[i]][j][1] += weight
+                    break
+            
     def connect_matrix(self, width, height, width_weight, height_weight):
         width_increment = 0
         for j in range(height):
@@ -70,18 +80,12 @@ class Graph:
                 self.addEdge(i+height_increment, i+width+height_increment, height_weight)
             height_increment += width
 
-# Driver code
-if __name__ == "__main__":
-    # Create the graph
-    
-	width = 10
-	height = 4
-
-	V = width*height
-	Warehouse_floor = Graph(V)
-	Warehouse_floor.connect_matrix(width, height, 1, 3)
-	SkyHook = Graph(V)
-	SkyHook.connect_matrix(width, height, 1, 1)
-
-	print(Warehouse_floor.adj)
-	Warehouse_floor.shortestPath(0, 24)
+        n = 0
+        for x in range(height):
+            for y in range(width):
+                self.Node_pos[(x, y)] = (n)
+                n += 1
+                
+    def get_current_node(self, x, y):
+        return self.Node_pos[(x, y)]
+        
