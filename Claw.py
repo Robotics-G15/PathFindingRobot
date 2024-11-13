@@ -147,7 +147,7 @@ class Hive(Shelf):
                 deliveryQ -= no
                 self.sendLocationGet(i, locat, item)
 
-    def sendLocationTaxi(self, origin, goal):
+    def sendLocationTaxi(self, item, goal):
         #print(origin, goal)
         return 0
 
@@ -157,18 +157,18 @@ class Hive(Shelf):
         shelf_location = self.shelves[no].locate_shelves()
         for i in location:
             #print(self.shelves[no].view_contents())
-            self.sendLocationTaxi(self.location, shelf_location )
+            self.sendLocationTaxi(item, shelf_location )
             self.shelves[no].put(item, i)
-            #self.sendLocationClaw(i)
+            #self.sendLocationClaw(i, item)
         
     #sends location of a shelve to the taxi
     def sendLocationGet(self, no, location, item):
         shelf_location = self.shelves[no].locate_shelves()
         for i in location:
             #can introduce taxi verification
-            self.sendLocationTaxi(shelf_location, self.location )
+            self.sendLocationTaxi(item, self.location )
             self.shelves[no].get(i)
-            #self.sendlocationClaw(i)
+            #self.sendlocationClaw(i, item)
         
 
     def distribute_priority(self, shipment, shipment_quantity):
@@ -200,6 +200,7 @@ class Hive(Shelf):
         return shipment_proportional
         
 hive = Hive(10000)
-hive.allocateShipment(10, "Bananas")
-hive.fulfillDelivery(10, "Bananas")
-#hive.distribute_priority(["Bananas", "Kiwi", "Motor Oil"], [1020, 3000, 1020])
+#hive.allocateShipment(10, "Bananas")
+#hive.fulfillDelivery(10, "Bananas")
+
+hive.distribute_priority(["Bananas", "Kiwi", "Motor Oil"], [1020, 3000, 1020])
