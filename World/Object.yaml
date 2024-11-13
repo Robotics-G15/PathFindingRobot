@@ -1,0 +1,5 @@
+<category_name>:
+  footprint:
+    type: <footprint_type>
+    <property>: <footprint_property>
+  color: [<r>, <g>, <b>]

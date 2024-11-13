@@ -1,0 +1,22 @@
+<category_name>:
+  footprint:
+    type: <footprint_type>
+    <property>: <footprint_property>
+  nav_poses:
+    - [<x1>, <y1>, <z1>, <yaw1>]
+    - ...
+    - [<xN>, <yN>, <zN>, <yawN>]
+  locations:
+    - name: <location_name>
+      footprint:
+        type: <footprint_type>
+        <property>: <footprint_property>
+    - ...
+    - name: <other_location_name>
+      footprint:
+        type: <footprint_type>
+        <property>: <footprint_property>
+  color: [<r>, <g>, <b>]
+  is_open: True
+  is_locked: False
+  is_charger: False
