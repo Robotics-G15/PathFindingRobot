@@ -73,14 +73,22 @@ class Shelf:
     #define location and number of item in a shelve                
     def find_item(self, item):
         item_count = 0
-        loaction = []
+        location = []
         for i in range(0, len(self.contents)):
             for l in range(0, len(self.contents[i])):
                 if self.contents[i][l] == item:
-                    loaction.append([i, l])
+                    location.append([i, l])
                     item_count += 1
 
-        return item_count, loaction
+        return item_count, location
+    
+    def capacity(self):
+        free_spaces = 0
+        for i in range(0, len(self.contents)):
+            for l in range(0, len(self.contents[i])):
+                if self.contents[i][l] == [None]:
+                    free_spaces += 1
+        return free_spaces
                 
     #find how many spots are avaliable and return its location
     def find_Nofree(self):
@@ -127,49 +135,70 @@ class Hive(Shelf):
 
     #allocate shipment to free shelves
     def allocateShipment(self, shipmentQ, item):
+        noItem = 0
         for i in range(0, len(self.shelves)):
             no, locat = self.shelves[i].find_Nofree()
-            if no >= shipmentQ:
-                self.sendLocationPut(i, locat, item)
-                return no
+            if no >= shipmentQ[noItem]:
+                self.sendLocationPut(i, locat, item[noItem],shipmentQ[noItem])
+                shipmentQ[noItem] -= no
+                print(i,no,  item[noItem], shipmentQ[noItem], i)
+                noItem += 1
+                if noItem == len(shipmentQ):
+                    break
             else:
-                shipmentQ -= no
-                self.sendLocationPut(i, locat, item)
+                self.sendLocationPut(i, locat, item[noItem], shipmentQ[noItem])
+                shipmentQ[noItem] -= no
+                print(i,no, item[noItem], shipmentQ[noItem])
 
     def fulfillDelivery(self, deliveryQ, item):
         print(item)
         for i in range(0, len(self.shelves)):
             no, locat = self.shelves[i].find_item(item)
             if no >= deliveryQ:
-                self.sendLocationGet(i, locat, item)
+                self.sendLocationGet(i, locat, item, deliveryQ)
                 return no
             else:
+                self.sendLocationGet(i, locat, item, deliveryQ)
                 deliveryQ -= no
-                self.sendLocationGet(i, locat, item)
 
     def sendLocationTaxi(self, item, goal):
-        #print(origin, goal)
         return 0
 
     #get location of a shelve and sent to taxi
     #send location to the claw
-    def sendLocationPut(self, no, location, item):
-        shelf_location = self.shelves[no].locate_shelves()
-        for i in location:
+    def sendLocationPut(self, shelf_ID, location, item, noItems):
+        shelf_location = self.shelves[shelf_ID].locate_shelves()
+        for i in range(0, len(location)):
             #print(self.shelves[no].view_contents())
-            self.sendLocationTaxi(item, shelf_location )
-            self.shelves[no].put(item, i)
+            if noItems-1 >= i:
+                self.sendLocationTaxi(item, shelf_ID )
+                self.shelves[shelf_ID].put(item, location[i])
+            else:
+                return
             #self.sendLocationClaw(i, item)
+
         
     #sends location of a shelve to the taxi
-    def sendLocationGet(self, no, location, item):
-        shelf_location = self.shelves[no].locate_shelves()
-        for i in location:
+    def sendLocationGet(self, shelf_ID, location, item, quantity):
+        shelf_location = self.shelves[shelf_ID].locate_shelves()
+        for i in range(0, len(location)):
             #can introduce taxi verification
-            self.sendLocationTaxi(item, self.location )
-            self.shelves[no].get(i)
+            if quantity-1 >= i:
+                self.sendLocationTaxi(item, shelf_ID)
+                self.shelves[shelf_ID].get(location[i])
+            else:
+                return
             #self.sendlocationClaw(i, item)
         
+    def capacity(self):
+        capacity = 0
+        for i in range(0, len(self.shelves)):
+            capacity += self.shelves[i].capacity()
+            #no, loc = self.shelves[i].find_item("Bananas")
+            #capacity += no
+
+        return capacity
+
 
     def distribute_priority(self, shipment, shipment_quantity):
         #init
@@ -187,20 +216,28 @@ class Hive(Shelf):
         # might need to use merge if 1000's of items
         for i in range(len(shipment)):
             for j in range(len(shipment)-1):
-                if shipment_proportional[j] < shipment_proportional[j+1]:
+                if shipment_proportional[j] > shipment_proportional[j+1]:
                     shipment[j], shipment[j+1] = shipment[j+1], shipment[j]
                     shipment_quantity[j], shipment_quantity[j+1] = shipment_quantity[j+1], shipment_quantity[j]
                     shipment_proportional[j], shipment_proportional[j+1] = shipment_proportional[j+1], shipment_proportional[j]
 
         print(shipment)
         print(shipment_proportional)
+        print(shipment_quantity)
 
         # for every shipment_proportional total [1,2,3] = 6
         # 1 robot for item 1, 2 robots for item 2, 3 robots for item 3 
-        return shipment_proportional
+        return shipment, shipment_quantity
         
+
+    def distribute_Delivery(self, listItems, listQuantity ):
+        listItems, listQuantity = self.distribute_priority(listItems, listQuantity)
+        self.allocateShipment(listQuantity, listItems)
 hive = Hive(10000)
 #hive.allocateShipment(10, "Bananas")
 #hive.fulfillDelivery(10, "Bananas")
-
-hive.distribute_priority(["Bananas", "Kiwi", "Motor Oil"], [1020, 3000, 1020])
+#hive.distribute_Delivery(["Bananas"], [1020])
+hive.distribute_Delivery(["Bananas", "Kiwi", "Motor Oil"], [1020, 3000, 1020])
+print(hive.capacity())
+hive.fulfillDelivery(10, "Bananas")
+print(hive.capacity())

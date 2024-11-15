@@ -1,4 +1,31 @@
-               
+class Claw:
+    def __init__(self):
+        self.x = 0
+        self.y = 0 
+        self.z = 0
+        self.full = False
+        self.open = True
+        self.orientation = 0
+    
+    def recieve(self, item, location):
+        return 0
+    
+    def get(self, item, location):
+        return 0
+    
+    def moveY(self, current, goal):
+        return 0
+    
+    def moveX(self, current, goal):
+        return 0 
+    
+    def openClaw(self):
+        return 0
+    
+    def closeClaw(self):
+        return 0
+    
+
 
 class Shelf:
     def __init__(self):
@@ -6,6 +33,7 @@ class Shelf:
         self.width = 10
         self.height = 10
         self.contents = []
+        self.claw = Claw()
         self.allocate_contents()
 
     #populating avaliable shelve space
@@ -158,6 +186,7 @@ class Hive(Shelf):
         for i in location:
             #print(self.shelves[no].view_contents())
             self.sendLocationTaxi(item, shelf_location )
+            #send location to the claw
             self.shelves[no].put(item, i)
             #self.sendLocationClaw(i, item)
         
