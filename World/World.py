@@ -28,27 +28,44 @@ def create_world():
     world.set_metadata(
         locations=os.path.join("/home/slane/pyrobosim/World/Location.yaml"),
     )
-    Width = 2
-    Height = 2
+    Width = 20
+    Height = 20
 
 
 
     # Set the location and object metadata
     # Add rooms
     #graph = world.graph_node_from_entity(Graph(Height, Width))
-    r1coords = [(-Width*2, 0),
+    r1coords = [(-20, 0),
                 (0, 0),
-                (0, Height*2),
-                (-Width*2, Height*2)]
+                (0, 20),
+                (-20, 20)]
+    
+
     world.add_room(
         name="Warehouse", footprint=r1coords, wall_width=0.1, color=[0, 0, 0]
     )
 
-    for j in range(Height*2):
-        for i in range(Width*2):
-                world.add_location(
-                    category="shelf", parent="Warehouse", pose=Pose(x=-i, y=j, yaw=-np.pi / 1.0), color = [0, 0, 0]
-                )
+    world.add_location(
+        category="shelf", parent="Warehouse", pose=Pose(x=-3, y=3, yaw=-np.pi / 1.0), color = [0, 0, 0]
+    )
+
+    world.add_location(
+        category="Nav_point", parent="Warehouse", pose=Pose(x=-5.5, y=1, yaw=-np.pi / 1.0), color = [0, 0, 0]
+    )
+
+    world.add_location(
+        category="shelf", parent="Warehouse", pose=Pose(x=-8, y=3, yaw=-np.pi / 1.0), color = [0, 0, 0]
+    )
+    world.add_location(
+        category="shelf", parent="Warehouse", pose=Pose(x=-3, y=8, yaw=-np.pi / 1.0), color = [0, 0, 0]
+    )
+    world.add_location(
+        category="shelf", parent="Warehouse", pose=Pose(x=-8, y=8, yaw=-np.pi / 1.0), color = [0, 0, 0]
+    )
+
+            
+
 
     planner_config = {
         "world": world,
