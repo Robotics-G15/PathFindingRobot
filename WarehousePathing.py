@@ -3,7 +3,7 @@ class Graph:
     def __init__(self, V: int):  # Constructor
         self.V = V
         self.Node_pos = {}
-        self.adj = [[] for _ in range(V)]
+        self.adj = [[] for _ in range(V+2)]
 
     def addEdge(self, u: int, v: int, w: int):
         self.adj[u].append([v, w])
@@ -71,19 +71,22 @@ class Graph:
         width_increment = 0
         for j in range(height):
             for i in range(width-1):
-                self.addEdge(i+width_increment, i+1+width_increment, width_weight)
+                self.addEdge(i+width_increment+1, i+1+width_increment+1, width_weight)
             width_increment += width
             
         height_increment = 0
         for j in range(height-1):
             for i in range(width):
-                self.addEdge(i+height_increment, i+width+height_increment, height_weight)
+                self.addEdge(i+height_increment+1, i+width+height_increment+1, height_weight)
             height_increment += width
+
+        self.addEdge(0, 1, 1)
+        self.addEdge(width*height+1,  width*height, 1)
 
         n = 0
         for x in range(height):
             for y in range(width):
-                self.Node_pos[(x, y)] = (n)
+                self.Node_pos[(-x, y)] = (n)
                 n += 1
                 
     def get_current_node(self, x, y):
