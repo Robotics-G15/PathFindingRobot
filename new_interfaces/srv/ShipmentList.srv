@@ -1,0 +1,4 @@
+string<=20[] item
+int64[] q
+---
+bool done
