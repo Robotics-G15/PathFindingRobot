@@ -1,6 +1,6 @@
-# General parameters
-params:
-   name: Warehouse
-   inflation_radius: 0.1  # Collision padding radius around rooms/hallways/locations
-   object_radius: 0.1  # Collision padding radius around objects
-   wall_height: 1  # Vertical (Z) height of walls, can override with individual entities
+
+# Metadata
+metadata:
+   locations: /home/slane/pyrobosim/World/Location.yaml
+   objects: /home/slane/pyrobosim/World/Object.yaml
+   robots: /home/slane/pyrobosim/World/Robots.yaml
