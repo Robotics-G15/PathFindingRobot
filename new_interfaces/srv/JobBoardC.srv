@@ -1,0 +1,5 @@
+string name
+string item
+int64[] location
+---
+int64[] sum
