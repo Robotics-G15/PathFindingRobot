@@ -160,18 +160,19 @@ class Hive(Node):
         for i in range(0, len(self.shelves)):
             #Find avalaibel location and number of spaces in shelves
             no, locat = self.shelves[i].find_Nofree()
-            if no >= shipmentQ[noItem]:
-                #Notify claw, assign taxi and put item on a shelve
-                self.sendLocationPut(i, locat, item[noItem],shipmentQ[noItem])
-                shipmentQ[noItem] -= no
-                #move to another item
-                noItem += 1
-                #if all items have been allocated
-                if noItem == len(shipmentQ):
-                    break
-            else:
-                self.sendLocationPut(i, locat, item[noItem], shipmentQ[noItem])
-                shipmentQ[noItem] -= no
+            if no != 0:
+                if no >= shipmentQ[noItem]:
+                    #Notify claw, assign taxi and put item on a shelve
+                    self.sendLocationPut(i, locat, item[noItem],shipmentQ[noItem])
+                    shipmentQ[noItem] -= no
+                    #move to another item
+                    noItem += 1
+                    #if all items have been allocated
+                    if noItem == len(shipmentQ):
+                        break
+                else:
+                    self.sendLocationPut(i, locat, item[noItem], shipmentQ[noItem])
+                    shipmentQ[noItem] -= no
 
         return True
 
@@ -181,18 +182,19 @@ class Hive(Node):
         for i in range(0, len(self.shelves)):
             #check how many required items are on the shelve
             no, locat = self.shelves[i].find_item(item[noItem])
-            if no >= deliveryQ[noItem]:
-                #Notify claw, assign taxi and get item off the shelve
-                self.sendLocationGet(i, locat, item[noItem],deliveryQ[noItem])
-                deliveryQ[noItem] -= no
-                #move to another item
-                noItem += 1
-                #if all required items have been found
-                if noItem == len(deliveryQ):
-                    break
-            else:
-                self.sendLocationGet(i, locat, item[noItem], deliveryQ[noItem])
-                deliveryQ[noItem] -= no
+            if no != 0:
+                if no >= deliveryQ[noItem]:
+                    #Notify claw, assign taxi and get item off the shelve
+                    self.sendLocationGet(i, locat, item[noItem],deliveryQ[noItem])
+                    deliveryQ[noItem] -= no
+                    #move to another item
+                    noItem += 1
+                    #if all required items have been found
+                    if noItem == len(deliveryQ):
+                        break
+                else:
+                    self.sendLocationGet(i, locat, item[noItem], deliveryQ[noItem])
+                    deliveryQ[noItem] -= no
 
         return True
 
