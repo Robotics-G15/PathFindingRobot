@@ -9,6 +9,8 @@ from pyrobosim.navigation import ConstantVelocityExecutor, RRTPlanner
 from pyrobosim.gui import start_gui
 from pyrobosim.utils.general import get_data_folder
 from pyrobosim.utils.pose import Pose
+from new_interfaces.srv import ShipmentList
+
 
 data_folder = get_data_folder()
 
@@ -16,8 +18,8 @@ def create_world():
     """Create a test world"""
     world = World()
     world.set_metadata(
-        locations=os.path.join("/home/slane/ros2_ws/src/py_service/py_service/Location.yaml"),
-        objects=os.path.join("/home/slane/ros2_ws/src/py_service/py_service/Object.yaml"),
+        locations=os.path.join("/home/ros2_ws/src/py_service/py_service/Location.yaml"),
+        objects=os.path.join("/home/ros2_ws/src/py_service/py_service/Object.yaml"),
     )
 
     Width = 10
@@ -51,7 +53,7 @@ def spawn_object(world, item_id, location):
     object = world.add_object(category=item_id, parent=location, pose=Pose(x=1, y=2, yaw=0.0))
     return object
 
-def create_robot(world):
+def create_robot(world, i):
     planner_config = {
         "world": world,
         "bidirectional": True,
@@ -67,17 +69,23 @@ def create_robot(world):
 
     
     path_planner = RRTPlanner(**planner_config)
-    robot = Robot(name="Taxi_bot", radius=0.1, color=[1, 0, 0], initial_battery_level=float("inf"), path_executor=ConstantVelocityExecutor(), path_planner=path_planner)
+    robot = Robot(name="Taxi_bot"+ i, radius=0.1, color=[1, 0, 0], initial_battery_level=float("inf"), path_executor=ConstantVelocityExecutor(), path_planner=path_planner)
     
     return robot
 
 def main():
     rclpy.init() 
 
+    #Recieving shipment from client items and their quantity
+    self.srv = self.create_service(ShipmentList, 'shipment_list',self.shipment_callback)
+
     world, Shelves = create_world()
     spawn_object(world, "banana", Shelves[0])
+    Height = 10
     robot = create_robot(world)
-    world.add_robot(robot, loc="Warehouse", pose=Pose(x=-0.5, y=1, yaw=-np.pi / 1.0))
+    for i in range(Height - 1):
+        world.add_robot(robot, loc="Warehouse", pose=Pose(x=-0.5, y=i+1, yaw=-np.pi / 1.0))
+    
     node = rclpy.create_node('pyrobosim_world_node')
     
     world_ros_wrapper = WorldROSWrapper(world)
