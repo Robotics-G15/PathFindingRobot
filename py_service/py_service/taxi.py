@@ -114,7 +114,6 @@ class Taxi_bot(Node):
         self.avaliable = True
         self.item_ID = item_ID
         self.Goal_Node = Goal_Node
-        self.prev_Goal_Node = None # to give the hive a start position of bot
         self.Node = Node
         self.X_pos = X_pos
         self.Y_pos = Y_pos
@@ -162,6 +161,7 @@ class Taxi_bot(Node):
         else:
             #let other taxis get the job if not avaliable 
             time.sleep(5)
+
 
         response.avaliable = avaliable
         self.get_logger().info('%s avaliable: %s' % (request.name, response.avaliable))
@@ -288,16 +288,10 @@ def main():
     Warehouse_floor.connect_matrix(width, height, 1, 3)
     rclpy.init()
     #create taxi with name consisting of inputted number
-
     name = sys.argv[1]
     taxi = Taxi_bot(f"taxi_{name}",Warehouse_floor)
     rclpy.spin(taxi)
     rclpy.shutdown()
-
-    # when recieved call from hive to sp
-    def spawnTaxi(self, name, Warehouse_floor):
-        taxi = Taxi_bot(name, Warehouse_floor)
-        return taxi
 
 if __name__ == "__main__":
     main()

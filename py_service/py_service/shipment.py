@@ -3,10 +3,6 @@ from new_interfaces.srv import ShipmentList
 
 import rclpy 
 from rclpy.node import Node
-import yaml
-import time
-import sys
-
 
 class Shipment(Node):
     def __init__(self):
@@ -35,13 +31,6 @@ class Shipment(Node):
         self.req.q = qua
         return self.cli.call_async(self.req)
     
-    def item_spawner(self, item, quantity):
-        self.spawn_req.item = item
-        self.spawn_req.quantity = quantity
-        return self.cli.call_async(self.spawn_req)
-    
-
-    
 def main():
     rclpy.init()
     ship = Shipment()
@@ -49,18 +38,6 @@ def main():
     future = ship.send_request()
     #handle response
     ship.get_logger().info('result %s' %(future.result()))
-
-    try:
-        while rclpy.ok():
-            item_name = (ship.items)
-            quantity = 1
-            cmd.vel = f"item, quantity"
-            print(cmd.vel)
-            time.sleep(5)
-    except KeyboardInterrupt:
-        ship.get_logger().info('Shipment process interrupted.')
-
-
     rclpy.spin_until_future_complete(ship, future)
     response = future.result()
     ship.get_logger().info(

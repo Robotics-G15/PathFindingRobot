@@ -4,11 +4,9 @@ from new_interfaces.srv import JobBoardC
 from new_interfaces.srv import ShipmentList
 from new_interfaces.srv import TaxiAval
 from new_interfaces.srv import Registry
-from taxi import Taxi # Not ROS so <HELP> if acceptable
 import rclpy 
 from rclpy.node import Node
 import time
-from World import create_robot # Not really ros
 
 class Shelf:
     def __init__(self):
@@ -114,6 +112,7 @@ class Shelf:
     
     def locate_shelves(self):
         return self.x, self.y
+ 
 
 class Hive(Node):
     def __init__(self, Max_storage):
@@ -130,8 +129,6 @@ class Hive(Node):
         while not self.cli_2.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not avaliable, waiting...')
         self.req_2 = TaxiAval.Request()
-
-        
 
         self.Max_storage = Max_storage
         self.location = (0, 0)
@@ -156,15 +153,6 @@ class Hive(Node):
         for i in range(0, self.Max_storage//100):
             shelve = Shelf()
             self.shelves.append(shelve)
-
-    def makeTaxis(self): # very simple, could add button for real time add
-        Height = 10 # in world.py
-        dif = 3 # in world.py
-        Max_taxis = Height//dif
-        for i in range(0, Max_taxis):
-            Taxi(self, "taxi"+i)
-            create_robot(world, i) # world not defined?
-            #self.taxi.append(taxi) # taxi is made and will regester itself back to hive
 
     #allocate shipment to free shelves
     def allocateShipment(self, shipmentQ, item):
