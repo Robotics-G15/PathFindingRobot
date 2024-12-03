@@ -1,5 +1,6 @@
-<category_name>:
+
+banana:                   # The category name is "apple"
   footprint:
-    type: <footprint_type>
-    <property>: <footprint_property>
-  color: [<r>, <g>, <b>]
+    type: circle         # Circular footprint
+    radius: 0.06         # 6 cm radius
+  color: [1, 0, 0]       # Red
