@@ -1,13 +1,150 @@
 import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+import time
+from new_interfaces.srv import MoveCar
+from new_interfaces.srv import MoveItems
+from pyrobosim_msgs.action import ExecuteTaskAction, ExecuteTaskPlan
+from pyrobosim_msgs.msg import TaskAction, TaskPlan
+from pyrobosim_msgs.srv import RequestWorldState
+
+
+class TaxiBotServer(Node):
+    def __init__(self):
+        super().__init__("TaixBotServer")
+        self.move_car_srv = self.create_service(MoveCar, 'move_car', self.move_car_callback)
+        self.plan_car_srv = self.create_service(MoveCar, 'plan_car', self.plan_car_callback)
+        self.put_car_srv = self.create_service(MoveItems, 'put_car', self.put_items_callback)
+        self.get_car_srv = self.create_service(MoveItems, 'get_car', self.get_items_callback)
+        # Action client for a single action
+        self.action_client = ActionClient(self, ExecuteTaskAction, "execute_action")
+        # Action client for a task plan
+        self.plan_client = ActionClient(self, ExecuteTaskPlan, "execute_task_plan")
+        # Call world state service to ensure node is running
+        self.world_state_client = self.create_client(
+            RequestWorldState, "request_world_state"
+        )
+        while rclpy.ok() and not self.world_state_client.wait_for_service(
+            timeout_sec=1.0
+        ):
+            self.get_logger().info("Waiting for world state server...")
+        future = self.world_state_client.call_async(RequestWorldState.Request())
+        rclpy.spin_until_future_complete(self, future)
+
+    def move_car_callback(self, request, responce):
+        car_id = request.car_id
+        target_location = request.target_loc
+        self.get_logger().info(f"Recovied request to move car {car_id} to {target_location}")
+        self.get_logger().info("Executing task action...")
+        goal = ExecuteTaskAction.Goal()
+        goal.action = TaskAction(
+            robot=f"TaxiBot{car_id}",
+            type="navigate",
+            target_location=target_location,
+        )
+        self.send_action_goal(goal, cancel=False)
+        
+        return responce
+
+    def plan_car_callback(self, request, responce):
+        car_id = request.car_id
+        target_location = request.target_loc
+        self.get_logger().info(f"Recovied request to move car {car_id} to {target_location}")
+        self.get_logger().info("Executing task plan...")
+        task_actions = [
+            TaskAction(robot=f"TaxiBot{car_id}",type="navigate",target_location=target_location,), ]
+        goal = ExecuteTaskPlan.Goal()
+        goal.plan = TaskPlan(robot=f"TaxiBot{car_id}", actions=task_actions)
+        self.send_plan_goal(goal, cancel=False)
+        
+        return responce
+
+    def put_items_callback(self, request, response):
+        shelf = "shelf"+request.target_loc
+        name = "TaxiBot"+ request.car_id
+        item = request.item
+        task_actions = [TaskAction(robot=name, type="navigate", target_location="Item_spawn",), 
+        TaskAction(robot=name, type="detect", object=item,),
+        TaskAction(robot=name, type="pick", object=item,),
+        TaskAction(robot=name, type="navigate", target_location= shelf,),
+        TaskAction(robot=name, type="place", object=item,),
+        TaskAction(robot=name, type="navigate", target_location="Item_spawn",)]
+        
+        goal = ExecuteTaskPlan.Goal()
+        goal.plan = TaskPlan(robot=name, actions=task_actions)
+        self.send_plan_goal(goal, cancel=False)
+
+    def get_items_callback(self, request, response):
+        shelf = "shelf"+request.target_loc
+        name = "TaxiBot"+ request.car_id
+        item = request.item
+        task_actions = [TaskAction(robot=name, type="navigate", target_location=shelf,), 
+        TaskAction(type="detect", object=item,),
+        TaskAction(type="pick", object=item,),
+        TaskAction(type="navigate", target_location= "Delivery",),
+        TaskAction(type="place", object=item,)]
+        
+        goal = ExecuteTaskPlan.Goal()
+        goal.plan = TaskPlan(robot=name, actions=task_actions)
+        self.send_plan_goal(goal, cancel=False)
+
+
+    def send_action_goal(self, goal, cancel=False):
+        self.action_client.wait_for_server()
+        goal_future = self.action_client.send_goal_async(goal)
+        if cancel:
+            goal_future.add_done_callback(self.goal_response_callback)
+
+    def send_plan_goal(self, goal, cancel=False):
+        self.plan_client.wait_for_server()
+        goal_future = self.plan_client.send_goal_async(goal)
+        if cancel:
+            goal_future.add_done_callback(
+                lambda goal_future: self.goal_response_callback(
+                    goal_future, cancel_delay=12.5
+                )
+            )
+
+    def goal_response_callback(self, goal_future, cancel_delay=2.0):
+        """Starts a timer to cancel the goal handle, upon receiving an accepted goal."""
+        goal_handle = goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info("Goal was rejected.")
+            return
+
+        self.cancel_timer = self.create_timer(
+            cancel_delay, lambda: self.cancel_goal(goal_handle)
+        )
+
+    def cancel_goal(self, goal):
+        """Timer callback function that cancels a goal."""
+        self.get_logger().info("Canceling goal")
+        goal.cancel_goal_async()
+        self.cancel_timer.cancel()
+
+
+def main():
+    rclpy.init()
+    Node = TaxiBotServer()
+    rclpy.spin(Node)
+    Node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+'''import rclpy
 from rclpy.node import Node
 import sys
-import time
 from new_interfaces.srv import JobBoardT
 from new_interfaces.srv import JobBoardC
 from new_interfaces.srv import TaxiAval
 from new_interfaces.srv import Registry
-from new_interfaces.srv import MoveItems
-
+from pyrobosim.planning.actions import TaskAction, TaskPlan
+from rclpy.action import ActionClient
+from pyrobosim_msgs.action import ExecuteTaskAction, ExecuteTaskPlan
+from pyrobosim_msgs.msg import TaskAction, TaskPlan
+from pyrobosim_msgs.srv import RequestWorldState
 
 # This class represents a directed graph using adjacency list representation
 class Graph:
@@ -114,11 +251,13 @@ class Taxi_bot(Node):
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not avaliable, waiting....')
         self.req = Registry.Request()
-        #TaxiServer to put item from item spawn
-        self.put_service = self.create_client(MoveItems, "put_car")
-        #TaxiServer to get item from the shelf
-        self.get_service = self.create_client(MoveItems, "get_car")
-
+        self.action_client = ActionClient(self, ExecuteTaskAction, "execute_action")
+        self.plan_client = ActionClient(self, ExecuteTaskPlan, "execute_task_plan")
+        self.world_client = self.create_client(RequestWorldState, "request_world_state")
+        while rclpy.ok() and not self.world_client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().info("Waiting foe world state...")
+            future = self.world_client.call_async(RequestWorldState.Request())
+            rclpy.spin_until_future_complete(self, future)
         self.name = name
         self.avaliable = True
         self.item_ID = item_ID
@@ -141,7 +280,29 @@ class Taxi_bot(Node):
             self.get_logger().info(f'Register {future.result()}')
         future.add_done_callback(when_finished)
         return future
-    
+        
+    def send_action(self, goal):
+        self.action_client.wait_for_server()
+        future = self.action_client.send_goal_async(goal)
+
+    def send_plan(self, goal):
+        print(goal)
+        self.plan_client.wait_for_server()
+
+        #while not self.plan_client.wait_for_server(timeout_sec=1.0):
+            #self.get_logger().info('Service not avaliable, waiting....')
+        goal_future = self.plan_client.send_goal_async(goal)
+        print(goal_future.result())
+        #print(goal_future.execution_result())
+        def when_finished(_goal_future):
+            self.get_logger().info(f'Register {goal_future.execution_result()}')
+        #goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info("NOt accepted")
+            return
 
     #Service to transport items to given location 
     def pickTaxi_callback(self, request, response):
@@ -182,44 +343,64 @@ class Taxi_bot(Node):
     def start(self, Warehouse_floor):
         self.spawn_taxi() # Spawn taxi
 
-
-    #send taxi action to the taxi server to put
-    #item into given shelf
     def put_items(self, item, shelf_ID):
-        self.request = MoveItems.Request()
-        self.request.car_id = str(self.name[4])
-        self.request.target_loc = str(shelf_ID)
-        self.request.item = item
-        while not self.put_service.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting...')
-        #call asynchronously
-        future = self.put_service.call_async(self.request)
-        return future
+        shelf = "shelf"+str(shelf_ID)
+        name = "Taxi-Bot"+ str(self.name[4])
+        actions = [TaskAction(
+            type="navigate",
+            source_location="Warehouse",
+            target_location="Item_spawn",
+        ), TaskAction(type="detect", object=item),
+        TaskAction(type="pick", object=item),
+        TaskAction(type="navigate",
+            source_location="Item_spawn",target_location= shelf,
+        ), TaskAction(type="place", object=item),
+        TaskAction(type="navigate", target_location="Item_spawn")]
+        
+        goal = ExecuteTaskPlan.Goal()
+        goal.plan = TaskPlan(robot=name, actions=actions)
+        self.send_plan(goal)
 
-
-    #send taxi action to the taxi server to get
-    #item from given shelf
     def get_items(self, item, shelf_ID):
-        self.request = MoveItems.Request()
-        self.request.car_id = str(self.name[4])
-        self.request.target_loc = str(shelf_ID)
-        self.request.item = item
-        while not self.get_service.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting...')
-        future = self.get_service.call_async(self.request)
-        return future
+        shelf = "shelf"+str(shelf_ID)
+        name = "Taxi-Bot"+ self.name[4]
+        actions = [
+        TaskAction(
+            type="navigate",
+            source_location="Warehouse",
+            target_location=shelf,
+        )]
+        actions.append(TaskAction("detect", object=item))
+        actions.append(TaskAction("pick", object=item))
+        actions.append(TaskAction("navigate",target_location= "Delivery",
+        ))
+        goal = ExecuteTaskPlan.Goal()
+        actions.append(TaskAction("place", object=item))
+        goal.plan = TaskPlan(robot= name, actions=actions)
+        self.send_plan(goal)
+
 
     def startGoing(self, item, location, shelf_ID):
-        #send the request to the taxiServer to execute an action
-        #depending on put the item and get the item
-        if location=="put":
-            self.put_items(item, shelf_ID)
-        else:
-            self.get_items(item, shelf_ID)
-        #inform claw that taxi arrived
-        self.arrivedToClaw(item, location, shelf_ID)
+        #need to make location into node
+        ##cahnge location to string put/get
+        self.put_items(item, shelf_ID)
+        #self.get_items(item, shelf_ID)
+        '''
+        #shelf = "Delivery"
+        #action = [TaskAction(robot="Taxi-Bot1", type="navigate", target_location=shelf), TaskAction(robot="Taxi-Bot1",type="navigate", target_location="shelf2")]
+        #goal = ExecuteTaskPlan.Goal()
+        #name = 'Taxi-Bot1'
+        #goal.plan = TaskPlan(robot=name, actions=action)
+        #self.send_plan(goal)'''
+        #Path = self.get_path(Warehouse_floor, +1) # get path to node
+        #self.go_to_goal(Path) # Go to shelf
+        #self.Arrived_at_Goal() # PUBLISH TO SUBSCRIBER
 
+        #self.arrivedToClaw(item, location, shelf_ID)
+        #self.store_item() # PUBLISH TO SUBSCRIBER
+        #return None
 
+'''
     #communication between claw and taxi
     #sending item, self location 
     #the claw is identified by shelf id which calls only the claw with that id
