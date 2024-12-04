@@ -5,12 +5,6 @@ from new_interfaces.srv import JobBoardT
 from new_interfaces.srv import JobBoardC
 from new_interfaces.srv import TaxiAval
 from new_interfaces.srv import Registry
-from pyrobosim.planning.actions import TaskAction, TaskPlan
-from rclpy.action import ActionClient
-from pyrobosim_msgs.action import ExecuteTaskAction, ExecuteTaskPlan
-from pyrobosim_msgs.msg import TaskAction, TaskPlan
-from pyrobosim_msgs.srv import RequestWorldState
-
 # This class represents a directed graph using adjacency list representation
 class Graph:
     def __init__(self, V: int):  # Constructor
@@ -104,6 +98,7 @@ class Graph:
         
 
 class Taxi_bot(Node):
+    
     def __init__(self,name, Warehouse_floor ,item_ID = None, Goal_Node = None, Node = 0, X_pos = 0, Y_pos = 0, orientation = 0, Shelf_destination = None):
         super().__init__('taxi_service')
         #Service to pick up the item 
@@ -119,28 +114,16 @@ class Taxi_bot(Node):
         self.avaliable = True
         self.item_ID = item_ID
         self.Goal_Node = Goal_Node
+        self.prev_Goal_Node = None # to give the hive a start position of bot
         self.Node = Node
         self.X_pos = X_pos
         self.Y_pos = Y_pos
         self.orientation = orientation
         self.Shelf_destination = Shelf_destination
         self.warehouse = Warehouse_floor
-
-
+        
         self.start(Warehouse_floor)
         self.register()
-        
-    def start(self, Warehouse_floor):
-        self.spawn_taxi() # Spawn taxi
-#         Path = self.get_path(Warehouse_floor, +1) # get path to node
-#         self.go_to_goal(Path) # Go to shelf
-#         self.Arrived_at_Goal() # PUBLISH TO SUBSCRIBER
-#         self.store_item() # PUBLISH TO SUBSCRIBER
-
-#         self.warehouse = Warehouse_floor
-        
-#         self.start(Warehouse_floor)
-#         self.register()
 
     #Register that the taxi of name exist
     def register(self):
@@ -180,7 +163,6 @@ class Taxi_bot(Node):
             #let other taxis get the job if not avaliable 
             time.sleep(5)
 
-
         response.avaliable = avaliable
         self.get_logger().info('%s avaliable: %s' % (request.name, response.avaliable))
         return response
@@ -188,54 +170,14 @@ class Taxi_bot(Node):
         
     def start(self, Warehouse_floor):
         self.spawn_taxi() # Spawn taxi
-        
-     def put_items(self, item, shelf_ID):
-        shelf = "shelf"+str(shelf_ID)
-        name = "Taxi-Bot"+ str(self.name[4])
-        actions = [TaskAction(
-            type="navigate",
-            source_location="Warehouse",
-            target_location="Item_spawn",
-        ), TaskAction(type="detect", object=item),
-        TaskAction(type="pick", object=item),
-        TaskAction(type="navigate",
-            source_location="Item_spawn",target_location= shelf,
-        ), TaskAction(type="place", object=item),
-        TaskAction(type="navigate", target_location="Item_spawn")]
-        
-        goal = ExecuteTaskPlan.Goal()
-        goal.plan = TaskPlan(robot=name, actions=actions)
-        self.send_plan(goal)
-
-    def get_items(self, item, shelf_ID):
-        shelf = "shelf"+str(shelf_ID)
-        name = "Taxi-Bot"+ self.name[4]
-        actions = [
-        TaskAction(
-            type="navigate",
-            source_location="Warehouse",
-            target_location=shelf,
-        )]
-        actions.append(TaskAction("detect", object=item))
-        actions.append(TaskAction("pick", object=item))
-        actions.append(TaskAction("navigate",target_location= "Delivery",
-        ))
-        goal = ExecuteTaskPlan.Goal()
-        actions.append(TaskAction("place", object=item))
-        goal.plan = TaskPlan(robot= name, actions=actions)
-        self.send_plan(goal)
 
     def startGoing(self, item, location, shelf_ID):
         #need to make location into node
-        
+
         #Path = self.get_path(Warehouse_floor, +1) # get path to node
         #self.go_to_goal(Path) # Go to shelf
         #self.Arrived_at_Goal() # PUBLISH TO SUBSCRIBER
-        
-        self.put_items(item, shelf_ID)
-        #self.get_items(item, shelf_ID)
         self.arrivedToClaw(item, location, shelf_ID)
-        
         #self.store_item() # PUBLISH TO SUBSCRIBER
         return None
 
@@ -346,10 +288,16 @@ def main():
     Warehouse_floor.connect_matrix(width, height, 1, 3)
     rclpy.init()
     #create taxi with name consisting of inputted number
+
     name = sys.argv[1]
-    taxi = Taxi_bot(f"Taxi{name}",Warehouse_floor)
+    taxi = Taxi_bot(f"taxi_{name}",Warehouse_floor)
     rclpy.spin(taxi)
     rclpy.shutdown()
+
+    # when recieved call from hive to sp
+    def spawnTaxi(self, name, Warehouse_floor):
+        taxi = Taxi_bot(name, Warehouse_floor)
+        return taxi
 
 if __name__ == "__main__":
     main()

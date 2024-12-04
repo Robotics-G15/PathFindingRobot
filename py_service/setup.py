@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+
+            'World = py_service.World:main',
             'hive = py_service.hive:main',
             'client = py_service.shipment:main',
             'delivery = py_service.delivery:main',

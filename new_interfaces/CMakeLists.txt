@@ -32,10 +32,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"msg/JobBoardN.msg"
 	"srv/JobBoardT.srv"
 	"srv/JobBoardC.srv"
+	"srv/TaxiAval.srv"
 	"srv/AddThreeInts.srv"
 	"srv/Shipment.srv"
 	"srv/ShipmentList.srv"
 	"msg/ShipmentList.msg"
+	"srv/Registry.srv"
 	DEPENDENCIES geometry_msgs
-)
 ament_package()

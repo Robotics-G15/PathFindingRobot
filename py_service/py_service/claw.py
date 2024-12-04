@@ -1,16 +1,31 @@
 import math
+# <<<<<<< RosImplementation
+# import rclpy
+# from rclpy.node import Node
+# from new_interfaces.srv import JobBoardC
+# from new_interfaces.msg import JobBoardN
+
+# class Claw(Node):
+#     def __init__(self):
+#         super().__init__('claw_service')
+#         #self.subscription = self.create_subscription(JobBoardN, 'item', self.listener_callback, 10)
+#         #self.subscription
+#         self.srv = self.create_service(JobBoardC, 'pickItem_claw', self.pickClaw_callback)
+#         angle = 90
+# =======
+import sys
 import rclpy
 from rclpy.node import Node
 from new_interfaces.srv import JobBoardC
-from new_interfaces.msg import JobBoardN
 
 class Claw(Node):
-    def __init__(self):
+    def __init__(self, name):
         super().__init__('claw_service')
-        #self.subscription = self.create_subscription(JobBoardN, 'item', self.listener_callback, 10)
-        #self.subscription
-        self.srv = self.create_service(JobBoardC, 'pickItem_claw', self.pickClaw_callback)
+        #Service for hive to send the shelf location
+        self.srv = self.create_service(JobBoardC, f'pickItem_claw{name}', self.pickClaw_callback)
+        self.srv = self.create_service(JobBoardC, f'takeFromTaxi{name}', self.pickFromTaxi_callback)
         angle = 90
+        self.name = name
         self.arm1Angle = angle
         self.arm2Angle = angle
         self.baseAngle = angle
@@ -24,16 +39,36 @@ class Claw(Node):
         self.shelf_location = None
         self.item = None
 
-    def listener_callback(self, msg):
-        self.shelf_location = msg.location
-        self.item = msg.data
-        print(self.shelf_location[0])
-        self.get_logger().info(f'I heard %s {msg.location}' %msg.data)
 
+#     def listener_callback(self, msg):
+#         self.shelf_location = msg.location
+#         self.item = msg.data
+#         print(self.shelf_location[0])
+#         self.get_logger().info(f'I heard %s {msg.location}' %msg.data)
+
+
+    #Communication between taxi and claw to pick and get the items
+    #should check if given items match ones in array 
+    def pickFromTaxi_callback(self, request, response):
+        response.sum = self.location
+        self.get_logger().info('Incoming request\n items:%s name:%s location:%s %s' % (request.item, request.name, request.location, response.sum))
+        return response
+
+    #REcieve the shelf location
     def pickClaw_callback(self, request, response):
         response.sum = self.location
         self.get_logger().info('Incoming request\n items:%s name:%s location:%s %s' % (request.item, request.name, request.location, response.sum))
-        
+        #create a list for each item operation
+        order = []
+        order.append(request.item)
+        order.append(request.location)
+        if request.name == 'get':
+            self.get.append(order)
+            print("get", order)
+        else:
+            self.put.append(order)
+            print("put", order)
+
         return response
 
     def moveToAngle(self, targetx, targety, targetz):
@@ -90,8 +125,8 @@ class Claw(Node):
         return 0
 def main():
     rclpy.init()
-
-    claw = Claw()
+    name = sys.argv[1]
+    claw = Claw(name)
     rclpy.spin(claw)
     rclpy.shutdown()
 #claw.movement([4, 10, 0])

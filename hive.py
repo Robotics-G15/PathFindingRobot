@@ -1,15 +1,14 @@
 
-
-
 from new_interfaces.srv import JobBoardT
 from new_interfaces.srv import JobBoardC
 from new_interfaces.srv import ShipmentList
 from new_interfaces.srv import TaxiAval
 from new_interfaces.srv import Registry
+from taxi import Taxi # Not ROS so <HELP> if acceptable
 import rclpy 
 from rclpy.node import Node
 import time
-
+from World import create_robot # Not really ros
 
 class Shelf:
     def __init__(self):
@@ -74,7 +73,7 @@ class Shelf:
         else:
             return True
 
-    #define of free spot in a shelve
+    #define location of free spot in a shelve
     def find_free(self):
         for i in range(0, len(self.contents)):
             for l in range(0, len(self.contents[i])):
@@ -115,27 +114,10 @@ class Shelf:
     
     def locate_shelves(self):
         return self.x, self.y
- 
 
 class Hive(Node):
     def __init__(self, Max_storage):
         super().__init__('hive_service')
-
-#     def listener_callback(self, msg):
-#         listQ= msg.location
-#         listItem = msg.data
-#         q = []
-#         w = []
-#         for i in listQ:
-#             q.append(i)
-#         for p in listItem:
-#             w.append(p)
-#         #print(self.shelf_location[0])
-#         self.get_logger().info(f'I heard %s {msg.location}' %msg.data)
-#         print("lists",listQ, listItem)
-#         print("my",q, w)
-#         self.distribute_Shipment(w, q)
-
         #Recieving shipment from client items and their quantity
         self.srv = self.create_service(ShipmentList, 'shipment_list',self.shipment_callback)
         #Fulfilling delivery from client items and their quantity
@@ -148,6 +130,8 @@ class Hive(Node):
         while not self.cli_2.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not avaliable, waiting...')
         self.req_2 = TaxiAval.Request()
+
+        
 
         self.Max_storage = Max_storage
         self.location = (0, 0)
@@ -173,96 +157,19 @@ class Hive(Node):
             shelve = Shelf()
             self.shelves.append(shelve)
 
+    def makeTaxis(self): # very simple, could add button for real time add
+        Height = 10 # in world.py
+        dif = 3 # in world.py
+        Max_taxis = Height//dif
+        for i in range(0, Max_taxis):
+            Taxi(self, "taxi"+i)
+            create_robot(world, i) # world not defined?
+            #self.taxi.append(taxi) # taxi is made and will regester itself back to hive
+
     #allocate shipment to free shelves
     def allocateShipment(self, shipmentQ, item):
         noItem = 0
         for i in range(0, len(self.shelves)):
-            if no != 0:
-              no, locat = self.shelves[i].find_Nofree()
-              if no >= shipmentQ[noItem]:
-                  self.sendLocationPut(i, locat, item[noItem],shipmentQ[noItem])
-                  shipmentQ[noItem] -= no
-                  print(i,no,  item[noItem], shipmentQ[noItem], i)
-                  noItem += 1
-                  if noItem == len(shipmentQ):
-                      break
-              else:
-                  self.sendLocationPut(i, locat, item[noItem], shipmentQ[noItem])
-                  shipmentQ[noItem] -= no
-                  print(i,no, item[noItem], shipmentQ[noItem])
-
-        return True
-
-#     def fulfillDelivery(self, deliveryQ, item):
-#         noItem = 0
-#         for i in range(0, len(self.shelves)):
-#             no, locat = self.shelves[i].find_item(item[noItem])
-#             if no >= deliveryQ[noItem]:
-#                 self.sendLocationGet(i, locat, item[noItem],deliveryQ[noItem])
-#                 deliveryQ[noItem] -= no
-#                 print(i,no,  item[noItem], deliveryQ[noItem], i)
-#                 noItem += 1
-#                 if noItem == len(deliveryQ):
-#                     break
-#             else:
-#                 self.sendLocationGet(i, locat, item[noItem], deliveryQ[noItem])
-#                 deliveryQ[noItem] -= no
-#                 print(i,no, item[noItem], deliveryQ[noItem])
-
-#         return True
-                
-#     def sendLocationTaxi(self, item, goal):
-#         self.req_1.name = 'name'
-#         self.req_1.item = item
-#         print(goal)
-#         self.req_1.location = goal
-#         return self.cli_1.call_async(self.req_1)
-
-#     def sendLocationClaw(self, item, shelf_l):
-#         self.req_2.name = 'name'
-#         self.req_2.item = item
-#         self.req_2.location = shelf_l
-#         future = self.cli_2.call_async(self.req_2)
-#         response = future.result()
-#         if response == None:
-#             response = self.sendLocationClaw(item, shelf_l)
-
-        return response
-#     def response_callback(self, future):
-#         if future.result() is not None:
-#             result = future.result()
-#             self.get_logger().info(f'REsult recieved {result}')
-#         else:
-#             self.get_logger().error("goal rejected")
-
-#     def send_request(self, item, shelf_l):
-#         self.req.name = 'name'
-#         self.req.item = item
-#         self.req.location = shelf_l
-#         future = self.cli.call_async(self.req)
-#         print(future.result())
-#         def when_finished(_future):
-#             self.get_logger().info(f'hshys{future.result()}')
-#         future.add_done_callback(when_finished)
-#         return future
-
-    #get location of a shelve and sent to taxi
-    #send location to the cla
-
-        
-    #sends location of a shelve to the taxi
-    def sendLocationGet(self, shelf_ID, location, item, quantity):
-        shelf_location = self.shelves[shelf_ID].locate_shelves()
-        for i in range(0, len(location)):
-            #can introduce taxi verification
-            if quantity-1 >= i:
-                self.sendLocationTaxi(item, shelf_location)
-                self.shelves[shelf_ID].get(location[i])
-            else:
-                return
-            #self.sendlocationClaw(i, item)
-        
-=======
             #Find avalaibel location and number of spaces in shelves
             no, locat = self.shelves[i].find_Nofree()
             if no != 0:
@@ -422,8 +329,6 @@ class Hive(Node):
         capacity = 0
         for i in range(0, len(self.shelves)):
             capacity += self.shelves[i].capacity()
-            #no, loc = self.shelves[i].find_item("Bananas")
-            #capacity += no
 
         return capacity
 
@@ -457,15 +362,13 @@ class Hive(Node):
         # 1 robot for item 1, 2 robots for item 2, 3 robots for item 3 
         return shipment, shipment_quantity
         
-    #Prioritise items with larger quanity and allocate shelfs & taxis
 
+    #Prioritise items with larger quanity and allocate shelfs & taxis
     def distribute_Shipment(self, listItems, listQuantity ):
         listItems, listQuantity = self.distribute_priority(listItems, listQuantity)
-        result = self.
-        (listQuantity, listItems)
+        result = self.allocateShipment(listQuantity, listItems)
         return result
         
-
 
     #Recieve shippment call with items
     def shipment_callback(self, request, response):
@@ -475,7 +378,6 @@ class Hive(Node):
         response.done = self.distribute_Shipment(items, quantity)
         return response
 
-
     #get delivery of items with their quantity
     def delivery_callback(self, request, response):
         self.get_logger().info('Delivery of %s, %d' %(request.item[0], request.q[0]))
@@ -483,55 +385,11 @@ class Hive(Node):
         items = request.item
         response.done = self.fulfillDelivery(quantity, items)
         return response
-    
-
-#     def add_three_ints_callback(self, request, response):
-#         response.sum = request.a + request.b +request.c
-#         self.get_logger().info('Incoming request\na: %d  %s %s' %(request.q, request.item, response.done))
-    
-#         return response
-
-#     def main(self):
-#         future_1 = self.send_request("cow", (0,0))
-#         self.get_logger().info('result %s' %(future_1.result()))
-#         rclpy.spin_until_future_complete(self, future_1)
-#         response_1 = future_1.result()
-#         self.get_logger().info(
-#             'Result of add-two_ints: for %s' %
-#             (response_1.sum))
         
-
-#     '''def main(self):
-#         try:
-#             future_1 = self.send_request("cow", (0,0))
-#             self.get_logger().info('result %s' %(future_1.result()))
-#             #rclpy.spin_until_future_complete(self, future_1)
-#             response_1 = future_1.result()
-#         except Exception as e:
-#             self.get_logger().info(
-#                 'Result of add-two_ints: for %s' %
-#                 (response_1.sum))
-#         rclpy.spin_once(self, timeout_sec=0.5)'''
-
-#     def now(self):
-#         #self.main()
-#         self.timer_callback()
     
 def main():
     rclpy.init()
     hive = Hive(10000)
-#     #hive.main()
-#     #items = ["banana", "cow"]
-#     #quantity = [3, 4]
-#     #response = hive.distribute_Shipment(items, quantity)
-#     '''future = hive.send_request("cow", (0,0))
-#     hive.get_logger().info('result %s' %(future.result()))
-#     rclpy.spin_until_future_complete(hive, future)
-#     response = future.result()
-#     hive.get_logger().info(
-#         'Result of add-two_ints: for %s' %
-#         (response.sum))'''
-    
 
 
     rclpy.spin(hive)
