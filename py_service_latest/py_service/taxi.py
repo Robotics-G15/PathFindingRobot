@@ -104,6 +104,7 @@ class Graph:
         
 
 class Taxi_bot(Node):
+    
     def __init__(self,name, Warehouse_floor ,item_ID = None, Goal_Node = None, Node = 0, X_pos = 0, Y_pos = 0, orientation = 0, Shelf_destination = None):
         super().__init__('taxi_service')
         #Service to pick up the item 
@@ -113,8 +114,15 @@ class Taxi_bot(Node):
         #Register existance to hive 
         self.cli = self.create_client(Registry, 'register_hive')
         while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting...')
+            self.get_logger().info('Service not avaliable, waiting....')
         self.req = Registry.Request()
+        self.action_client = ActionClient(self, ExecuteTaskAction, "execute_action")
+        self.plan_client = ActionClient(self, ExecuteTaskPlan, "execute_task_plan")
+        self.world_client = self.create_client(RequestWorldState, "request_world_state")
+        while rclpy.ok() and not self.world_client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().info("Waiting foe world state...")
+            future = self.world_client.call_async(RequestWorldState.Request())
+            rclpy.spin_until_future_complete(self, future)
         self.name = name
         self.avaliable = True
         self.item_ID = item_ID
@@ -125,22 +133,10 @@ class Taxi_bot(Node):
         self.orientation = orientation
         self.Shelf_destination = Shelf_destination
         self.warehouse = Warehouse_floor
-
-
+        
         self.start(Warehouse_floor)
         self.register()
-        
-    def start(self, Warehouse_floor):
-        self.spawn_taxi() # Spawn taxi
-#         Path = self.get_path(Warehouse_floor, +1) # get path to node
-#         self.go_to_goal(Path) # Go to shelf
-#         self.Arrived_at_Goal() # PUBLISH TO SUBSCRIBER
-#         self.store_item() # PUBLISH TO SUBSCRIBER
-
-#         self.warehouse = Warehouse_floor
-        
-#         self.start(Warehouse_floor)
-#         self.register()
+        self.startGoing("banana", 0, 1)
 
     #Register that the taxi of name exist
     def register(self):
@@ -151,6 +147,29 @@ class Taxi_bot(Node):
         future.add_done_callback(when_finished)
         return future
         
+    def send_action(self, goal):
+        self.action_client.wait_for_server()
+        future = self.action_client.send_goal_async(goal)
+
+    def send_plan(self, goal):
+        print(goal)
+        self.plan_client.wait_for_server()
+
+        #while not self.plan_client.wait_for_server(timeout_sec=1.0):
+            #self.get_logger().info('Service not avaliable, waiting....')
+        goal_future = self.plan_client.send_goal_async(goal)
+        print(goal_future.result())
+        #print(goal_future.execution_result())
+        def when_finished(_goal_future):
+            self.get_logger().info(f'Register {goal_future.execution_result()}')
+        #goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info("NOt accepted")
+            return
+
     #Service to transport items to given location 
     def pickTaxi_callback(self, request, response):
         #respond with taxi name in order to be put back in avalaible taxi list
@@ -162,7 +181,8 @@ class Taxi_bot(Node):
             % (request.item, request.name, request.location, request.shelf, self.name))
 
         #Begin travel to location
-        self.startGoing(request.item, request.location, request.shelf)
+        location = request.location
+        self.startGoing(request.item, location, request.shelf)
         #Indicate that taxi is no longer occupied
         self.updateTaxi(self.name, True)
         return response
@@ -178,7 +198,7 @@ class Taxi_bot(Node):
             avaliable.append(self.name)
         else:
             #let other taxis get the job if not avaliable 
-            time.sleep(5)
+            time.sleep(20)
 
 
         response.avaliable = avaliable
@@ -188,8 +208,8 @@ class Taxi_bot(Node):
         
     def start(self, Warehouse_floor):
         self.spawn_taxi() # Spawn taxi
-        
-     def put_items(self, item, shelf_ID):
+
+    def put_items(self, item, shelf_ID):
         shelf = "shelf"+str(shelf_ID)
         name = "Taxi-Bot"+ str(self.name[4])
         actions = [TaskAction(
@@ -225,19 +245,27 @@ class Taxi_bot(Node):
         goal.plan = TaskPlan(robot= name, actions=actions)
         self.send_plan(goal)
 
+
     def startGoing(self, item, location, shelf_ID):
         #need to make location into node
-        
+        ##cahnge location to string put/get
+        self.put_items(item, shelf_ID)
+        #self.get_items(item, shelf_ID)
+        '''
+        shelf = "Delivery"
+        action = [TaskAction(robot="Taxi-Bot1", type="navigate", target_location=shelf), TaskAction(robot="Taxi-Bot1",type="navigate", target_location="shelf2")]
+        goal = ExecuteTaskPlan.Goal()
+        name = 'Taxi-Bot1'
+        goal.plan = TaskPlan(robot=name, actions=action)
+        self.send_plan(goal)'''
         #Path = self.get_path(Warehouse_floor, +1) # get path to node
         #self.go_to_goal(Path) # Go to shelf
         #self.Arrived_at_Goal() # PUBLISH TO SUBSCRIBER
-        
-        self.put_items(item, shelf_ID)
-        #self.get_items(item, shelf_ID)
+
         self.arrivedToClaw(item, location, shelf_ID)
-        
         #self.store_item() # PUBLISH TO SUBSCRIBER
         return None
+
 
     #communication between claw and taxi
     #sending item, self location 

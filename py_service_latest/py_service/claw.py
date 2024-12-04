@@ -1,18 +1,4 @@
 import math
-# <<<<<<< RosImplementation
-# import rclpy
-# from rclpy.node import Node
-# from new_interfaces.srv import JobBoardC
-# from new_interfaces.msg import JobBoardN
-
-# class Claw(Node):
-#     def __init__(self):
-#         super().__init__('claw_service')
-#         #self.subscription = self.create_subscription(JobBoardN, 'item', self.listener_callback, 10)
-#         #self.subscription
-#         self.srv = self.create_service(JobBoardC, 'pickItem_claw', self.pickClaw_callback)
-#         angle = 90
-# =======
 import sys
 import rclpy
 from rclpy.node import Node
@@ -38,14 +24,9 @@ class Claw(Node):
         self.full = False
         self.shelf_location = None
         self.item = None
-
-
-#     def listener_callback(self, msg):
-#         self.shelf_location = msg.location
-#         self.item = msg.data
-#         print(self.shelf_location[0])
-#         self.get_logger().info(f'I heard %s {msg.location}' %msg.data)
-
+        #create lists for each item operation
+        self.get = []
+        self.put = []
 
     #Communication between taxi and claw to pick and get the items
     #should check if given items match ones in array 
@@ -68,7 +49,6 @@ class Claw(Node):
         else:
             self.put.append(order)
             print("put", order)
-
         return response
 
     def moveToAngle(self, targetx, targety, targetz):
