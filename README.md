@@ -5,7 +5,7 @@
 - In your workspace enter ``colcon build``
 
 ### To source pyrobosim and build then run our code, run this: ###
-```source pyrobosim/setup/source_pyrobosim.bash
+``source pyrobosim/setup/source_pyrobosim.bash
 source ./install/setup.bash
 colcon build --packages-select py_service
-ros2 run py_service launch```
+ros2 run py_service launch``
