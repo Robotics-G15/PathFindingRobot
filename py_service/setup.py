@@ -1,5 +1,6 @@
 from setuptools import find_packages, setup
-
+import os
+import glob
 package_name = 'py_service'
 
 setup(
@@ -26,6 +27,8 @@ setup(
             'delivery = py_service.delivery:main',
             'taxi = py_service.taxi:main',
             'claw = py_service.claw:main',
+            'CarServer = py_service.taxi_bot:main',
+
         ],
     },
 )

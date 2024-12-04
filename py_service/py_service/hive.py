@@ -214,7 +214,8 @@ class Hive(Node):
         def when_finished(_future):
             self.get_logger().info(f'Claw located at:{future.result()}')
             #call taxi with the location of the hive
-            self.allocateTaxi(item, 'put', shelf_ID)
+            location = [0]
+            self.allocateTaxi(item, location, shelf_ID)
 
         future.add_done_callback(when_finished)
         return future
@@ -235,7 +236,7 @@ class Hive(Node):
         def when_finished(_future):
             self.get_logger().info(f'Claw located at: {future.result()}')
             #call taxi with the location of the claw
-            self.allocateTaxi(item, 'get', shelf_ID)
+            self.allocateTaxi(item, future.result().sum, shelf_ID)
 
         future.add_done_callback(when_finished)
         return future

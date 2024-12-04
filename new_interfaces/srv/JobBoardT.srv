@@ -1,6 +1,5 @@
 string name
 string item
-string location
-int64 shelf
+int64[] location
 ---
 string sum

@@ -136,6 +136,7 @@ class Taxi_bot(Node):
         
         self.start(Warehouse_floor)
         self.register()
+        self.startGoing("banana", 0, 1)
 
     #Register that the taxi of name exist
     def register(self):
@@ -210,7 +211,7 @@ class Taxi_bot(Node):
 
     def put_items(self, item, shelf_ID):
         shelf = "shelf"+str(shelf_ID)
-        name = "Taxi-Bot"+ str(self.name[4])
+        name = "TaxiBot"+ str(self.name[4])
         actions = [TaskAction(
             type="navigate",
             source_location="Warehouse",
@@ -228,7 +229,7 @@ class Taxi_bot(Node):
 
     def get_items(self, item, shelf_ID):
         shelf = "shelf"+str(shelf_ID)
-        name = "Taxi-Bot"+ self.name[4]
+        name = "TaxiBot"+ self.name[4]
         actions = [
         TaskAction(
             type="navigate",
@@ -271,10 +272,10 @@ class Taxi_bot(Node):
     #the claw is identified by shelf id which calls only the claw with that id
     def arrivedToClaw(self, item, location, shelf_ID):
         #Claw service
-        self.cli = self.create_client(JobBoardT, f'takeFromTaxi{shelf_ID}')
+        self.cli = self.create_client(JobBoardC, f'takeFromTaxi{shelf_ID}')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not avaliable, waiting...')
-        self.req = JobBoardT.Request()
+        self.req = JobBoardC.Request()
         self.req.name = 'put'
         self.req.item = item
         self.req.location = location

@@ -11,21 +11,19 @@ from pyrobosim.navigation import ConstantVelocityExecutor, RRTPlanner
 from pyrobosim.gui import start_gui
 from pyrobosim.utils.general import get_data_folder
 from pyrobosim.utils.pose import Pose
+import threading
+class WorldCreater:
 
-class WorldNode(Node):
-    data_folder = get_data_folder()
-    def __init__(self):
-        super().__init__('wode')
-        print('recieved')
-
-
-    def create_world(self):
+    def create_world(self, location_file = None, object_file = None):
         """Create a test world"""
-        global world
         world = World()
+        if location_file is None:
+            location_file = "/home/jiarui-liu/pyrobosim_ws/src/PathFindingRobot/py_service/py_service/Location.yaml"
+        if object_file is None:
+            object_file = "/home/jiarui-liu/pyrobosim_ws/src/PathFindingRobot/py_service/py_service/Object.yaml"
         world.set_metadata(
-            locations=os.path.join("/home/chaos08/pyrobosim_ws/src/py_service/py_service/Location.yaml"),
-            objects=os.path.join("/home/chaos08/pyrobosim_ws/src/py_service/py_service/Object.yaml"),
+            locations=location_file,
+            objects=object_file
         )
 
         Width = 10
@@ -40,22 +38,22 @@ class WorldNode(Node):
 
         # Define shelves without associating graph nodes
         Shelves.append(world.add_location(
-            name="Item_spawn", category="shelf", parent="Warehouse", pose=Pose(x=1, y=2, yaw=-np.pi / 1.0), color=[0, 0, 0]
+            name="Item_spawn", category="shelf", parent="Warehouse", pose=Pose(x=float(1), y=float(2), yaw=-np.pi / 1.0), color=[0, 0, 0]
         ))
         for j in range(2, Width, dif):
             for i in range(2, Height, dif):
                 Shelves.append(world.add_location(
-                    category="shelf", parent="Warehouse", pose=Pose(x=-i, y=j, yaw=-np.pi / 1.0), color=[0, 0, 0]
+                    category="shelf", parent="Warehouse", pose=Pose(x=float(-i), y=float(j), yaw=-np.pi / 1.0), color=[0, 0, 0]
                 ))
         
         Shelves.append(world.add_location(
-            name="Delivery", category="shelf", parent="Warehouse", pose=Pose(x=-Width-1, y=Height-2, yaw=-np.pi / 1.0), color=[0, 0, 0]
+            name="Delivery", category="shelf", parent="Warehouse", pose=Pose(x=float(-Width-1), y=float(Height-2), yaw=-np.pi / 1.0), color=[0, 0, 0]
         ))
 
         return world, Shelves
 
     def spawn_object(self, world, item_id, location):
-        object = world.add_object(category=item_id, parent=location, pose=Pose(x=1, y=2, yaw=0.0))
+        object = world.add_object(category=item_id, parent=location, pose=Pose(x=1.0, y=2.0, yaw=0.0))
         return object
 
     def create_robot(self, world, name):
@@ -78,83 +76,67 @@ class WorldNode(Node):
         
         return robot
 
-    def navigate(self, item, path):
-        actions = [
-        TaskAction(
-            "navigate",
-            source_location="Warehouse",
-            target_location=path[0],
-        ),]
-        actions.append(TaskAction("detect", object=item),)
-        actions.append(TaskAction("pick", object=item),)
+    # def navigate(self, item, path):
+    #     actions = [
+    #     TaskAction(
+    #         "navigate",
+    #         source_location="Warehouse",
+    #         target_location=path[0],
+    #     ),]
+    #     actions.append(TaskAction("detect", object=item),)
+    #     actions.append(TaskAction("pick", object=item),)
 
-        for i in range(len(path)-1):
-            actions.append(
-                TaskAction(
-            "navigate",
-            source_location=path[i],
-            target_location=path[i+1],
-        ),)
-        actions.append(TaskAction("place", object=item),)
-        plan = TaskPlan(actions=actions)
+    #     for i in range(len(path)-1):
+    #         actions.append(
+    #             TaskAction(
+    #         "navigate",
+    #         source_location=path[i],
+    #         target_location=path[i+1],
+    #     ),)
+    #     actions.append(TaskAction("place", object=item),)
+    #     plan = TaskPlan(actions=actions)
 
-        #result, num_completed = robots[0].execute_plan(plan)
-        return plan
+    #     #result, num_completed = robots[0].execute_plan(plan)
+    #     return plan
 
-    def navigate_return(self, item, path):
-        actions = []
-        path = path[:-1]
-        for i in range(len(path)-1):
-            actions.append(
-                TaskAction(
-            "navigate",
-            source_location=path[i],
-            target_location=path[i+1],
-        ),)
-        plan = TaskPlan(actions=actions)
+    # def navigate_return(self, item, path):
+    #     actions = []
+    #     path = path[:-1]
+    #     for i in range(len(path)-1):
+    #         actions.append(
+    #             TaskAction(
+    #         "navigate",
+    #         source_location=path[i],
+    #         target_location=path[i+1],
+    #     ),)
+    #     plan = TaskPlan(actions=actions)
 
-        #result, num_completed = robots[0].execute_plan(plan)
-        return plan
+    #     #result, num_completed = robots[0].execute_plan(plan)
+    #     return plan
 
 
 def main():
     rclpy.init() 
-    wode = WorldNode()
-    world, Shelves = wode.create_world()
+    creator = WorldCreater()
+    world, _ = creator.create_world()
     for i in range(4):
-        robot = wode.create_robot(world, f"Taxi-Bot{i}")
-        world.add_robot(robot, loc="Warehouse", pose=Pose(x=-0.5, y=i, yaw=-np.pi / 1.0))
-        #os.system(f'ros2 run py_service taxi {i}')
-    node = rclpy.create_node('pyrobosim_world_node')
-    #rclpy.spin(wode)
+        robot = creator.create_robot(world, f"TaxiBot{i}")
+        world.add_robot(robot, loc="Warehouse", pose=Pose(x=-0.5, y=float(i), yaw=-np.pi / 1.0))
+    
+    node = WorldROSWrapper(world)
+    ros_thread = threading.Thread(target=lambda: node.start(wait_for_gui=True))
+    ros_thread.start()
+    start_gui(node.world)
+
 
     """
-
-
     Implement ROS: 1: Item spawn, 2: Navigate to goal using path, 3: Navigate to item_spawn / start location
 
     ros2 run py_service taxi "banana", [item_spawn, shelf1, shelf2, shelf5, shelf8, Delivery]
     
-    
     """
+
     
-    world_ros_wrapper = WorldROSWrapper(world)
-
-    executor = rclpy.executors.MultiThreadedExecutor()
-    executor.add_node(world_ros_wrapper) 
-    executor.add_node(wode)
-
-    os.environ['QT_QPA_PLATFORM'] = 'xcb'
-    start_gui(world)
-
-    try:
-        executor.spin()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        executor.shutdown()
-        world_ros_wrapper.destroy_node()
-        rclpy.shutdown() 
 
 if __name__ == "__main__":
     main()

@@ -3,14 +3,13 @@ import sys
 import rclpy
 from rclpy.node import Node
 from new_interfaces.srv import JobBoardC
-from new_interfaces.srv import JobBoardT
 
 class Claw(Node):
     def __init__(self, name):
         super().__init__('claw_service')
         #Service for hive to send the shelf location
         self.srv = self.create_service(JobBoardC, f'pickItem_claw{name}', self.pickClaw_callback)
-        self.srv = self.create_service(JobBoardT, f'takeFromTaxi{name}', self.pickFromTaxi_callback)
+        self.srv = self.create_service(JobBoardC, f'takeFromTaxi{name}', self.pickFromTaxi_callback)
         angle = 90
         self.name = name
         self.arm1Angle = angle
@@ -32,7 +31,7 @@ class Claw(Node):
     #Communication between taxi and claw to pick and get the items
     #should check if given items match ones in array 
     def pickFromTaxi_callback(self, request, response):
-        response.sum = "put"
+        response.sum = self.location
         self.get_logger().info('Incoming request\n items:%s name:%s location:%s %s' % (request.item, request.name, request.location, response.sum))
         return response
 
