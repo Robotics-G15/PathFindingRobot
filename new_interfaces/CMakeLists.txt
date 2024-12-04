@@ -39,4 +39,5 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"msg/ShipmentList.msg"
 	"srv/Registry.srv"
 	DEPENDENCIES geometry_msgs
+)
 ament_package()
