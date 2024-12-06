@@ -38,6 +38,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"srv/ShipmentList.srv"
 	"msg/ShipmentList.msg"
 	"srv/Registry.srv"
+	"srv/MoveCar.srv"
+	"srv/MoveItems.srv"
 	DEPENDENCIES geometry_msgs
 )
 ament_package()

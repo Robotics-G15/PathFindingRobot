@@ -26,6 +26,7 @@ setup(
             'delivery = py_service.delivery:main',
             'taxi = py_service.taxi:main',
             'claw = py_service.claw:main',
+            'server = py_service.taxiserver:main'
         ],
     },
 )
