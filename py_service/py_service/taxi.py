@@ -112,7 +112,7 @@ class Taxi_bot(Node):
         #Register existance to hive 
         self.cli = self.create_client(Registry, 'register_hive')
         while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting....')
+            self.get_logger().info('Service Registry not avaliable, waiting....')
         self.req = Registry.Request()
         #TaxiServer to put item from item spawn
         self.put_service = self.create_client(MoveItems, "put_car")
@@ -191,7 +191,7 @@ class Taxi_bot(Node):
         self.request.target_loc = str(shelf_ID)
         self.request.item = item
         while not self.put_service.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting...')
+            self.get_logger().info('Service TaxiServer not avaliable, waiting...')
         #call asynchronously
         future = self.put_service.call_async(self.request)
         return future
@@ -205,7 +205,7 @@ class Taxi_bot(Node):
         self.request.target_loc = str(shelf_ID)
         self.request.item = item
         while not self.get_service.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting...')
+            self.get_logger().info('Service TaxiServer not avaliable, waiting...')
         future = self.get_service.call_async(self.request)
         return future
 
@@ -228,7 +228,7 @@ class Taxi_bot(Node):
         #Claw service
         self.cli = self.create_client(JobBoardT, f'takeFromTaxi{shelf_ID}')
         while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service not avaliable, waiting...')
+            self.get_logger().info('Service Claw not avaliable, waiting...')
         self.req = JobBoardT.Request()
         self.req.name = 'put'
         self.req.item = item

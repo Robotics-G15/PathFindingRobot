@@ -74,6 +74,8 @@ class TaxiBotServer(Node):
         goal.plan = TaskPlan(robot=name, actions=task_actions)
         self.send_plan_goal(goal, cancel=False)
 
+        return response
+
     def get_items_callback(self, request, response):
         shelf = "shelf"+request.target_loc
         name = "TaxiBot"+ request.car_id
@@ -87,6 +89,8 @@ class TaxiBotServer(Node):
         goal = ExecuteTaskPlan.Goal()
         goal.plan = TaskPlan(robot=name, actions=task_actions)
         self.send_plan_goal(goal, cancel=False)
+
+        return response
 
 
     def send_action_goal(self, goal, cancel=False):

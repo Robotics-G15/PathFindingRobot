@@ -40,11 +40,14 @@ class WorldCreater:
         Shelves.append(world.add_location(
             name="Item_spawn", category="shelf", parent="Warehouse", pose=Pose(x=float(1), y=float(2), yaw=-np.pi / 1.0), color=[0, 0, 0]
         ))
+        counter = 0
         for j in range(2, Width, dif):
             for i in range(2, Height, dif):
+                name = f"shelf{counter}"
                 Shelves.append(world.add_location(
-                    category="shelf", parent="Warehouse", pose=Pose(x=float(-i), y=float(j), yaw=-np.pi / 1.0), color=[0, 0, 0]
+                    name=name, category="shelf", parent="Warehouse", pose=Pose(x=float(-i), y=float(j), yaw=-np.pi / 1.0), color=[0, 0, 0]
                 ))
+                counter += 1
         
         Shelves.append(world.add_location(
             name="Delivery", category="shelf", parent="Warehouse", pose=Pose(x=float(-Width-1), y=float(Height-2), yaw=-np.pi / 1.0), color=[0, 0, 0]
@@ -52,8 +55,8 @@ class WorldCreater:
 
         return world, Shelves
 
-    def spawn_object(self, world, item_id, location):
-        object = world.add_object(category=item_id, parent=location, pose=Pose(x=1.0, y=2.0, yaw=0.0))
+    def spawn_object(self, world, item_id, location, x, y):
+        object = world.add_object(category=item_id, parent=location, pose=Pose(x=x, y=y, yaw=0.0))
         return object
 
     def create_robot(self, world, name):
@@ -119,10 +122,12 @@ def main():
     rclpy.init() 
     creator = WorldCreater()
     world, _ = creator.create_world()
-    for i in range(4):
-        robot = creator.create_robot(world, f"TaxiBot{i}")
-        world.add_robot(robot, loc="Warehouse", pose=Pose(x=-0.5, y=float(i), yaw=-np.pi / 1.0))
-    
+    robot = creator.create_robot(world, f"TaxiBot1")
+    world.add_robot(robot, loc="Warehouse", pose=Pose(x=-0.5, y=1.0, yaw=-np.pi / 1.0))
+    print(_)
+    creator.spawn_object(world, "banana", _[0], 0.75, 2.0)
+    creator.spawn_object(world, "apple", _[0], 1.0, 2.0)
+    creator.spawn_object(world, "battery", _[0], 1.25, 2.0)
     node = WorldROSWrapper(world)
     ros_thread = threading.Thread(target=lambda: node.start(wait_for_gui=True))
     ros_thread.start()

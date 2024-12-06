@@ -150,7 +150,7 @@ class Hive(Node):
     #create shelves to occupy max storage of hive
     def makeShelves(self):
         self.shelves = []
-        for i in range(0, self.Max_storage//100):
+        for i in range(1, (self.Max_storage//1000)-1):
             shelve = Shelf()
             self.shelves.append(shelve)
 
@@ -251,6 +251,7 @@ class Hive(Node):
         self.req_1.item = item
         self.req_1.location = location
         self.req_1.shelf = shelf_ID
+
 
         future = self.cli_1.call_async(self.req_1)
         #get the response when taxi returned results
